@@ -2,6 +2,10 @@
 
 #include "CoopCharacter.h"
 #include "Components/InputComponent.h"
+#include "Camera/CameraComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "GameFramework/PawnMovementComponent.h"
+#include "AI/Navigation/NavigationTypes.h"
 
 // Sets default values
 ACoopCharacter::ACoopCharacter()
@@ -9,6 +13,19 @@ ACoopCharacter::ACoopCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
+	// Create camera boom for follow camera
+	CameraBoomComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	CameraBoomComponent->bUsePawnControlRotation = true;
+	CameraBoomComponent->TargetArmLength = 200.f;
+	CameraBoomComponent->bEnableCameraLag = true;
+	CameraBoomComponent->SetupAttachment(RootComponent);
+
+	// Create camera component
+	FollowCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCameraComponent"));
+	FollowCameraComponent->SetupAttachment(CameraBoomComponent);
+
+	// 'Crouch' needs 'Nav agent'
+	GetMovementComponent()->GetNavAgentPropertiesRef().bCanCrouch = true;;
 }
 
 // Called when the game starts or when spawned
@@ -35,8 +52,16 @@ void ACoopCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAxis("MoveRight", this, &ACoopCharacter::MoveRight);
 
 	// Look input
-	PlayerInputComponent->BindAxis("LookUp", this, &ACoopCharacter::AddControllerPitchInput);
-	PlayerInputComponent->BindAxis("Turn", this, &ACoopCharacter::AddControllerYawInput);
+	PlayerInputComponent->BindAxis("LookUp", this, &ACharacter::AddControllerPitchInput);
+	PlayerInputComponent->BindAxis("Turn", this, &ACharacter::AddControllerYawInput);
+
+	// Crouch input
+	PlayerInputComponent->BindAction("Crouch", EInputEvent::IE_Pressed, this, &ACoopCharacter::BeginCrouch);
+	PlayerInputComponent->BindAction("Crouch", EInputEvent::IE_Released, this, &ACoopCharacter::EndCrouch);
+
+	// Jump input
+	PlayerInputComponent->BindAction("Jump", EInputEvent::IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", EInputEvent::IE_Released, this, &ACharacter::StopJumping);
 }
 
 void ACoopCharacter::MoveForward(float Value)
@@ -47,5 +72,15 @@ void ACoopCharacter::MoveForward(float Value)
 void ACoopCharacter::MoveRight(float Value)
 {
 	AddMovementInput(GetActorRightVector() * Value);
+}
+
+void ACoopCharacter::BeginCrouch()
+{
+	Crouch();
+}
+
+void ACoopCharacter::EndCrouch()
+{
+	UnCrouch();
 }
 

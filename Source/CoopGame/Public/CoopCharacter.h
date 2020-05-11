@@ -11,6 +11,14 @@ class COOPGAME_API ACoopCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
+	// Camera boom positioning the camera
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class USpringArmComponent* CameraBoomComponent;
+
+	// Third-Person Camera
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class UCameraComponent* FollowCameraComponent;
+
 public:
 	// Sets default values for this character's properties
 	ACoopCharacter();
@@ -32,4 +40,10 @@ protected:
 
 	// Called for right/left input
 	void MoveRight(float Value);
+
+	// Called for crouch action start
+	void BeginCrouch();
+
+	// Called for crouch action end
+	void EndCrouch();
 };
