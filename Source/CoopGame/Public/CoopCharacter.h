@@ -19,6 +19,10 @@ class COOPGAME_API ACoopCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCameraComponent;
 
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon")
+	class ACoopWeapon* MyWeapon;
+
 public:
 	// Sets default values for this character's properties
 	ACoopCharacter();
@@ -33,6 +37,9 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	// Returns Follow Camera location
+	virtual FVector GetPawnViewLocation() const override;
 
 protected:
 	// Called for forward/backward input

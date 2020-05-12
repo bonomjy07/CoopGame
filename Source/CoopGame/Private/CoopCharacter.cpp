@@ -6,6 +6,10 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "AI/Navigation/NavigationTypes.h"
+#include "Engine/World.h"
+#include "Engine/EngineTypes.h"
+
+#include "CoopWeapon.h"
 
 // Sets default values
 ACoopCharacter::ACoopCharacter()
@@ -32,7 +36,19 @@ ACoopCharacter::ACoopCharacter()
 void ACoopCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+//	// Create weapon and attch it to character
+//	UWorld* World = GetWorld();
+//	check(World);
+//	FActorSpawnParameters SpawnParameters;
+//	SpawnParameters.Owner = this;
+//	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+//	MyWeapon = Cast<ACoopWeapon>(World->SpawnActor<ACoopWeapon>(ACoopWeapon::StaticClass(), SpawnParameters));
+//	if (MyWeapon)
+//	{
+//		FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
+//		MyWeapon->AttachToComponent(Cast<USceneComponent>(GetMesh()), AttachmentRules, "WeaponSocket");
+//	}
 }
 
 // Called every frame
@@ -62,6 +78,16 @@ void ACoopCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	// Jump input
 	PlayerInputComponent->BindAction("Jump", EInputEvent::IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", EInputEvent::IE_Released, this, &ACharacter::StopJumping);
+}
+
+FVector ACoopCharacter::GetPawnViewLocation() const
+{
+	if (FollowCameraComponent)
+	{
+		return FollowCameraComponent->GetComponentLocation();
+	}
+
+	return Super::GetPawnViewLocation();
 }
 
 void ACoopCharacter::MoveForward(float Value)
