@@ -23,8 +23,37 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+public:
+	// Handle when it fire a weapon
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	virtual void Fire();
+
+	// Damage type of the weapon
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+	TSubclassOf<UDamageType> DamageType;
+
 protected:
 	// Gun skeleton mesh
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
 	class USkeletalMeshComponent* WeaponMeshComponent;
+
+	// Socket name for where to spawn an emitter on weapon mesh component
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+	FName MuzzleSocketName;
+
+	// Parameter name for target in trace effect
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+	FName TraceTargetName;
+
+	// Spawned when it fires
+	UPROPERTY(EditDefaultsOnly, Category = "Effects")
+	class UParticleSystem* MuzzleEffect;
+
+	// Spawned when it fires
+	UPROPERTY(EditDefaultsOnly, Category = "Effects")
+	class UParticleSystem* TraceEffect;
+
+	// Spawned when it hits something successfully
+	UPROPERTY(EditDefaultsOnly, Category = "Effects")
+	class UParticleSystem* ImpactEffect;
 };
