@@ -23,6 +23,23 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon")
 	class ACoopWeapon* MyWeapon;
 
+	// true if zoom button is pressed else, false
+	float bZoomingIn;
+
+	// Store default FOV when game begins
+	float DefaultFOV;
+
+	// Increments when zoom button is pressed else, decrements
+	float ZoomFactor;
+
+	// How much character zoom in
+	UPROPERTY(EditDefaultsOnly, Category = "Gunplay")
+	float ZoomedFOV;
+
+	// How fast character zoom in
+	UPROPERTY(EditDefaultsOnly, Category = "Gunplay")
+	float ZoomSpeed;
+
 public:
 	// Sets default values for this character's properties
 	ACoopCharacter();
@@ -53,4 +70,10 @@ protected:
 
 	// Called for crouch action end
 	void EndCrouch();
+
+	// Called for zoom in
+	void BeginZoom();
+
+	// Called for zoom out
+	void EndZoom();
 };

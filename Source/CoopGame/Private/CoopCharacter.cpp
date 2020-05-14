@@ -15,7 +15,7 @@
 ACoopCharacter::ACoopCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 	// Create camera boom for follow camera
 	CameraBoomComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -30,6 +30,11 @@ ACoopCharacter::ACoopCharacter()
 
 	// 'Crouch' needs 'Nav agent'
 	GetMovementComponent()->GetNavAgentPropertiesRef().bCanCrouch = true;;
+
+	// Set default zoom values
+	bZoomingIn = false;
+	ZoomedFOV = 65.0f;
+	ZoomSpeed = 0.2f;
 }
 
 // Called when the game starts or when spawned
@@ -37,7 +42,10 @@ void ACoopCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-//	// Create weapon and attch it to character
+	// Set default FOV
+	DefaultFOV = FollowCameraComponent->FieldOfView;
+
+	// Create weapon and attch it to character
 //	UWorld* World = GetWorld();
 //	check(World);
 //	FActorSpawnParameters SpawnParameters;
@@ -56,6 +64,19 @@ void ACoopCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// Zoom in if zoom button is pressed
+	{
+		if (bZoomingIn)
+		{
+			ZoomFactor += DeltaTime / ZoomSpeed;
+		}
+		else
+		{
+			ZoomFactor -= DeltaTime / ZoomSpeed;
+		}
+		ZoomFactor = FMath::Clamp<float>(ZoomFactor, 0.0f, 1.0f);
+		FollowCameraComponent->FieldOfView = FMath::Lerp<float>(DefaultFOV, ZoomedFOV, ZoomFactor);
+	}
 }
 
 // Called to bind functionality to input
@@ -78,6 +99,10 @@ void ACoopCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	// Jump input
 	PlayerInputComponent->BindAction("Jump", EInputEvent::IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", EInputEvent::IE_Released, this, &ACharacter::StopJumping);
+
+	// Zoom input
+	PlayerInputComponent->BindAction("Zoom", EInputEvent::IE_Pressed, this, &ACoopCharacter::BeginZoom);
+	PlayerInputComponent->BindAction("Zoom", EInputEvent::IE_Released, this, &ACoopCharacter::EndZoom);
 }
 
 FVector ACoopCharacter::GetPawnViewLocation() const
@@ -108,5 +133,15 @@ void ACoopCharacter::BeginCrouch()
 void ACoopCharacter::EndCrouch()
 {
 	UnCrouch();
+}
+
+void ACoopCharacter::BeginZoom()
+{
+	bZoomingIn = true;
+}
+
+void ACoopCharacter::EndZoom()
+{
+	bZoomingIn = false;
 }
 
