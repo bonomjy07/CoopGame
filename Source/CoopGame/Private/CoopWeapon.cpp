@@ -100,4 +100,15 @@ void ACoopWeapon::PlayFireEffect(const FVector& TraceEndPoint)
 	{
 		TraceEffectComp->SetVectorParameter(TraceTargetName, TraceEndPoint);
 	}
+
+	// Shake camera
+	APawn* MyPawn = Cast<APawn>(GetOwner());
+	if (MyPawn)
+	{
+		APlayerController* PC = Cast<APlayerController>(MyPawn->GetController());
+		if (PC)
+		{
+			PC->ClientPlayCameraShake(ShakeClass);
+		}
+	}
 }

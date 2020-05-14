@@ -32,6 +32,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 	TSubclassOf<UDamageType> DamageType;
 
+	// Camera Shake when it fires
+	UPROPERTY(EditDefaultsOnly, Category = "Effects")
+	TSubclassOf<UCameraShake> ShakeClass;
+
 protected:
 	// Gun skeleton mesh
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
