@@ -31,6 +31,11 @@ ACoopCharacter::ACoopCharacter()
 	// 'Crouch' needs 'Nav agent'
 	GetMovementComponent()->GetNavAgentPropertiesRef().bCanCrouch = true;;
 
+	// Set weapon attachment socket name
+	WeaponAttachSocketName = "WeaponSocket";
+
+	DefaultWeaponClass = ACoopWeapon::StaticClass();
+
 	// Set default zoom values
 	bZoomingIn = false;
 	ZoomedFOV = 65.0f;
@@ -46,17 +51,17 @@ void ACoopCharacter::BeginPlay()
 	DefaultFOV = FollowCameraComponent->FieldOfView;
 
 	// Create weapon and attch it to character
-//	UWorld* World = GetWorld();
-//	check(World);
-//	FActorSpawnParameters SpawnParameters;
-//	SpawnParameters.Owner = this;
-//	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-//	MyWeapon = Cast<ACoopWeapon>(World->SpawnActor<ACoopWeapon>(ACoopWeapon::StaticClass(), SpawnParameters));
-//	if (MyWeapon)
-//	{
-//		FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
-//		MyWeapon->AttachToComponent(Cast<USceneComponent>(GetMesh()), AttachmentRules, "WeaponSocket");
-//	}
+	UWorld* World = GetWorld();
+	check(World);
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.Owner = this;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	CurrentWeapon = World->SpawnActor<ACoopWeapon>(DefaultWeaponClass, SpawnParameters);
+	if (CurrentWeapon)
+	{
+		FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
+		CurrentWeapon->AttachToComponent(Cast<USceneComponent>(GetMesh()), AttachmentRules, WeaponAttachSocketName);
+	}
 }
 
 // Called every frame
@@ -92,6 +97,9 @@ void ACoopCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAxis("LookUp", this, &ACharacter::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("Turn", this, &ACharacter::AddControllerYawInput);
 
+	// Fire input
+	PlayerInputComponent->BindAction("Fire", EInputEvent::IE_Pressed, this, &ACoopCharacter::Fire);
+
 	// Crouch input
 	PlayerInputComponent->BindAction("Crouch", EInputEvent::IE_Pressed, this, &ACoopCharacter::BeginCrouch);
 	PlayerInputComponent->BindAction("Crouch", EInputEvent::IE_Released, this, &ACoopCharacter::EndCrouch);
@@ -123,6 +131,14 @@ void ACoopCharacter::MoveForward(float Value)
 void ACoopCharacter::MoveRight(float Value)
 {
 	AddMovementInput(GetActorRightVector() * Value);
+}
+
+void ACoopCharacter::Fire()
+{
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->Fire();
+	}
 }
 
 void ACoopCharacter::BeginCrouch()

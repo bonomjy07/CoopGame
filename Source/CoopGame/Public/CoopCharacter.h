@@ -20,8 +20,17 @@ class COOPGAME_API ACoopCharacter : public ACharacter
 	class UCameraComponent* FollowCameraComponent;
 
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapon")
-	class ACoopWeapon* MyWeapon;
+	// Character is currenlty holding weapon
+	UPROPERTY(BlueprintReadWrite, Category = "Weapon")
+	class ACoopWeapon* CurrentWeapon;
+
+	// Default weapon class character is holding at begin
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	TSubclassOf<class ACoopWeapon> DefaultWeaponClass;
+
+	// Socket name where to attach the weapon
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	FName WeaponAttachSocketName;
 
 	// true if zoom button is pressed else, false
 	float bZoomingIn;
@@ -65,15 +74,18 @@ protected:
 	// Called for right/left input
 	void MoveRight(float Value);
 
-	// Called for crouch action start
+	// Called when fire button is pressed
+	void Fire();
+
+	// Called when crouch button is pressed
 	void BeginCrouch();
 
-	// Called for crouch action end
+	// Called when crouch button is released
 	void EndCrouch();
 
-	// Called for zoom in
+	// Called when zoom button is pressed
 	void BeginZoom();
 
-	// Called for zoom out
+	// Called when zoom button is released
 	void EndZoom();
 };
