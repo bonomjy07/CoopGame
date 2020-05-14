@@ -56,4 +56,7 @@ protected:
 	// Spawned when it hits something successfully
 	UPROPERTY(EditDefaultsOnly, Category = "Effects")
 	class UParticleSystem* ImpactEffect;
+
+	// Called when weapon is fired
+	void PlayFireEffect(const FVector& TraceEndPoint);
 };

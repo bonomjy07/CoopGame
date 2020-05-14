@@ -9,6 +9,13 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "DrawDebugHelpers.h"
 
+static int32 DebugWeaponDrawing = 0;
+FAutoConsoleVariableRef CVARDebugWeaponDrawing(
+	TEXT("COOP.DebugWeapons"),
+	DebugWeaponDrawing,
+	TEXT("Draw Debug Lines for Weapons"),
+	ECVF_Cheat);
+
 // Sets default values
 ACoopWeapon::ACoopWeapon()
 {
@@ -72,17 +79,25 @@ void ACoopWeapon::Fire()
 			TraceEndPoint = HitResult.ImpactPoint;
 		}
 
-		// Show muzzle effect when it fires
-		UGameplayStatics::SpawnEmitterAttached(MuzzleEffect, WeaponMeshComponent, MuzzleSocketName);
+		PlayFireEffect(TraceEndPoint);
 
-		// Show trace effect when it fires
-		FVector MuzzleLocation = WeaponMeshComponent->GetSocketLocation(MuzzleSocketName);
-		UParticleSystemComponent* TraceEffectComp = UGameplayStatics::SpawnEmitterAtLocation(World, TraceEffect, MuzzleLocation);
-		if (TraceEffectComp)
+		if (DebugWeaponDrawing)
 		{
-			TraceEffectComp->SetVectorParameter(TraceTargetName, TraceEndPoint);
+			DrawDebugLine(World, EyeLocation, EndTrace, FColor::Red, false, 1.0f, 0, 1.0f);
 		}
+	}
+}
 
-		DrawDebugLine(World, EyeLocation, EndTrace, FColor::Red, false, 1.0f, 0, 1.0f);
+void ACoopWeapon::PlayFireEffect(const FVector& TraceEndPoint)
+{
+	// Show muzzle effect when it fires
+	UGameplayStatics::SpawnEmitterAttached(MuzzleEffect, WeaponMeshComponent, MuzzleSocketName);
+
+	// Show trace effect when it fires
+	FVector MuzzleLocation = WeaponMeshComponent->GetSocketLocation(MuzzleSocketName);
+	UParticleSystemComponent* TraceEffectComp = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), TraceEffect, MuzzleLocation);
+	if (TraceEffectComp)
+	{
+		TraceEffectComp->SetVectorParameter(TraceTargetName, TraceEndPoint);
 	}
 }
