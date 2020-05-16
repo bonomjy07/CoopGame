@@ -22,12 +22,14 @@ protected:
 	float DefaultHealth;
 
 	/** Responsible for health */
-	UPROPERTY(BlueprintReadWrite, Category = "Health")
+	UPROPERTY(ReplicatedUsing=OnRep_CurrentHealth, BlueprintReadWrite, Category = "Health")
 	float CurrentHealth;
 
 public:	
 	// Sets default values for this component's properties
 	UCoopHealthComponent();
+
+	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 protected:
 	// Called when the game starts
@@ -46,4 +48,8 @@ public:
 	/** Custom Event */
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnHealthChangedSignature OnHealthChanged;
+
+private:
+	UFUNCTION()
+	void OnRep_CurrentHealth(float OldHealth);
 };

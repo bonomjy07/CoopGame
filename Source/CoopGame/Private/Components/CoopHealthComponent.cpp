@@ -3,6 +3,7 @@
 
 #include "Components/CoopHealthComponent.h"
 #include "GameFramework/Actor.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values for this component's properties
 UCoopHealthComponent::UCoopHealthComponent()
@@ -11,25 +12,33 @@ UCoopHealthComponent::UCoopHealthComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
 
-	// ...
-
 	// Set default health
 	DefaultHealth = 100.f;
+
+	bReplicates = true;
 }
 
+void UCoopHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UCoopHealthComponent, CurrentHealth);
+}
 
 // Called when the game starts
 void UCoopHealthComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
-
-	// Register OnTakeAnyDamage handler
-	AActor* MyOwner = GetOwner();
-	if (MyOwner)
+	// Only server can hook in cases of any error or bug
+	//if (GetOwnerRole() == ROLE_Authority)
 	{
-		MyOwner->OnTakeAnyDamage.AddDynamic(this, &UCoopHealthComponent::HandleAnyDamage);
+		// Register OnTakeAnyDamage handler
+		AActor* MyOwner = GetOwner();
+		if (MyOwner)
+		{
+			MyOwner->OnTakeAnyDamage.AddDynamic(this, &UCoopHealthComponent::HandleAnyDamage);
+		}
 	}
 	CurrentHealth = DefaultHealth;
 }
@@ -39,8 +48,6 @@ void UCoopHealthComponent::BeginPlay()
 void UCoopHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// ...
 }
 
 void UCoopHealthComponent::HandleAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
@@ -56,5 +63,11 @@ void UCoopHealthComponent::HandleAnyDamage(AActor* DamagedActor, float Damage, c
 	OnHealthChanged.Broadcast(this, CurrentHealth, Damage, DamageType, InstigatedBy, DamageCauser);
 
 	UE_LOG(LogTemp, Log, TEXT("[%s] is damaged, Current Health is %s"), *DamagedActor->GetName() , *FString::SanitizeFloat(CurrentHealth));
+}
+
+void UCoopHealthComponent::OnRep_CurrentHealth(float old)
+{
+	float Damage = old - CurrentHealth;
+	OnHealthChanged.Broadcast(this, CurrentHealth, Damage, nullptr, nullptr, nullptr);
 }
 
