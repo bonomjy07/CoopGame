@@ -39,6 +39,8 @@ ACoopWeapon::ACoopWeapon()
 
 	// Bullets per min
 	RateOfFire = 600.0f;
+
+	bReplicates = true;
 }
 
 // Called when the game starts or when spawned
@@ -110,6 +112,12 @@ void ACoopWeapon::Fire()
 
 			// Set where line trace ended
 			TraceEndPoint = HitResult.ImpactPoint;
+
+			if (HitResult.GetComponent()->IsSimulatingPhysics())
+			{
+				FVector Velocity = HitResult.ImpactNormal * -1.f * 2000.f;
+				HitResult.GetComponent()->AddImpulse(Velocity);
+			}
 		}
 
 		// Show some effects for gunshot
