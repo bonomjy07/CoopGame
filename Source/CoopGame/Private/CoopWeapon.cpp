@@ -7,7 +7,11 @@
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
+#include "TimerManager.h"
 #include "DrawDebugHelpers.h"
+
+#include "CoopGame.h"
 
 static int32 DebugWeaponDrawing = 0;
 FAutoConsoleVariableRef CVARDebugWeaponDrawing(
@@ -29,12 +33,20 @@ ACoopWeapon::ACoopWeapon()
 	// Set muzzle socket name
 	MuzzleSocketName = "MuzzleSocket";
 	TraceTargetName = "BeamEnd";
+
+	// Set base damage
+	BaseDamage = 20.0f;
+
+	// Bullets per min
+	RateOfFire = 600.0f;
 }
 
 // Called when the game starts or when spawned
 void ACoopWeapon::BeginPlay()
 {
 	Super::BeginPlay();
+
+	TimeBetweenShots = 60.0f / RateOfFire;
 	
 }
 
@@ -66,26 +78,62 @@ void ACoopWeapon::Fire()
 		FCollisionQueryParams QueryParams;
 		QueryParams.AddIgnoredActor(MyOwner);
 		QueryParams.AddIgnoredActor(this);
-		QueryParams.bTraceComplex = true; // more precisely
+		QueryParams.bTraceComplex = true;           // more precisely
+		QueryParams.bReturnPhysicalMaterial = true; // give me surface type
 		
 		// Something was hit
-		if (World->LineTraceSingleByChannel(HitResult, EyeLocation, EndTrace, ECollisionChannel::ECC_Visibility, QueryParams))
+		if (World->LineTraceSingleByChannel(HitResult, EyeLocation, EndTrace, COLLISION_WEAPON, QueryParams))
 		{
-			// Blocking was hit!
-			UGameplayStatics::ApplyPointDamage(HitResult.GetActor(), 20.f, EyeRotation.Vector(), HitResult, MyOwner->GetInstigatorController(), this, DamageType);
-			// Show impact effect when something was hit
-			UGameplayStatics::SpawnEmitterAtLocation(World, ImpactEffect, HitResult.Location, HitResult.ImpactNormal.Rotation());
+			EPhysicalSurface SurfaceType = UPhysicalMaterial::DetermineSurfaceType(HitResult.PhysMaterial.Get());
 
+			// Apply the damage
+			float ActualDamage = BaseDamage;
+			if (SurfaceType == SURFACE_FLESHVULNERABLE)
+			{
+				ActualDamage *= 3.0f;
+			}
+			UGameplayStatics::ApplyPointDamage(HitResult.GetActor(), ActualDamage, EyeRotation.Vector(), HitResult, MyOwner->GetInstigatorController(), this, DamageType);
+
+			// Show impact effect depends on surface
+			UParticleSystem* SelectedEffect = nullptr;
+			switch (SurfaceType)
+			{
+				case SURFACE_FLESHDEFAULT:
+				case SURFACE_FLESHVULNERABLE:
+					SelectedEffect = FleshImpactEffect;
+					break;
+				default:
+					SelectedEffect = DefaultImpackEffect;
+					break;
+			}
+			UGameplayStatics::SpawnEmitterAtLocation(World, SelectedEffect, HitResult.Location, HitResult.ImpactNormal.Rotation());
+
+			// Set where line trace ended
 			TraceEndPoint = HitResult.ImpactPoint;
 		}
 
+		// Show some effects for gunshot
 		PlayFireEffect(TraceEndPoint);
+
+		// Store last fired time to fix shooting bug 
+		LastFiredTime = World->GetTimeSeconds();
 
 		if (DebugWeaponDrawing)
 		{
 			DrawDebugLine(World, EyeLocation, EndTrace, FColor::Red, false, 1.0f, 0, 1.0f);
 		}
 	}
+}
+
+void ACoopWeapon::StartFire()
+{
+	float FirstDelay = FMath::Max(LastFiredTime + TimeBetweenShots - GetWorld()->GetTimeSeconds(), 0.f);
+	GetWorldTimerManager().SetTimer(Timer_Firing, this, &ACoopWeapon::Fire, TimeBetweenShots, true, FirstDelay);
+}
+
+void ACoopWeapon::StopFire()
+{
+	GetWorldTimerManager().ClearTimer(Timer_Firing);
 }
 
 void ACoopWeapon::PlayFireEffect(const FVector& TraceEndPoint)

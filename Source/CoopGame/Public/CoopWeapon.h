@@ -28,6 +28,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	virtual void Fire();
 
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	virtual void StartFire();
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	virtual void StopFire();
+
 	// Damage type of the weapon
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 	TSubclassOf<UDamageType> DamageType;
@@ -49,6 +55,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 	FName TraceTargetName;
 
+	// Base damage for this weapon
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+	float BaseDamage;
+
 	// Spawned when it fires
 	UPROPERTY(EditDefaultsOnly, Category = "Effects")
 	class UParticleSystem* MuzzleEffect;
@@ -57,10 +67,28 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Effects")
 	class UParticleSystem* TraceEffect;
 
-	// Spawned when it hits something successfully
+	// Spawned when it hits successfully
 	UPROPERTY(EditDefaultsOnly, Category = "Effects")
-	class UParticleSystem* ImpactEffect;
+	class UParticleSystem* DefaultImpackEffect;
 
+	// Spawned when it hits something flesh successfully
+	UPROPERTY(EditDefaultsOnly, Category = "Effects")
+	class UParticleSystem* FleshImpactEffect;
+
+protected:
+	FTimerHandle Timer_Firing;
+
+	// RPM : Bullets per minute for weapon firing
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	float RateOfFire;
+
+	float TimeBetweenShots;
+
+protected:
 	// Called when weapon is fired
 	void PlayFireEffect(const FVector& TraceEndPoint);
+
+private:
+	// Helper var to store last fired time to fix shooting bug
+	float LastFiredTime;
 };

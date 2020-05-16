@@ -98,7 +98,9 @@ void ACoopCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAxis("Turn", this, &ACharacter::AddControllerYawInput);
 
 	// Fire input
-	PlayerInputComponent->BindAction("Fire", EInputEvent::IE_Pressed, this, &ACoopCharacter::Fire);
+	//PlayerInputComponent->BindAction("Fire", EInputEvent::IE_Pressed, this, &ACoopCharacter::Fire);
+	PlayerInputComponent->BindAction("Fire", EInputEvent::IE_Pressed, this, &ACoopCharacter::StartFire);
+	PlayerInputComponent->BindAction("Fire", EInputEvent::IE_Released, this, &ACoopCharacter::StopFire);
 
 	// Crouch input
 	PlayerInputComponent->BindAction("Crouch", EInputEvent::IE_Pressed, this, &ACoopCharacter::BeginCrouch);
@@ -138,6 +140,22 @@ void ACoopCharacter::Fire()
 	if (CurrentWeapon)
 	{
 		CurrentWeapon->Fire();
+	}
+}
+
+void ACoopCharacter::StartFire()
+{
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->StartFire();
+	}
+}
+
+void ACoopCharacter::StopFire()
+{
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->StopFire();
 	}
 }
 
