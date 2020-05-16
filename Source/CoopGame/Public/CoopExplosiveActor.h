@@ -21,7 +21,7 @@ class COOPGAME_API ACoopExplosiveActor : public AActor
 	class URadialForceComponent* RadicalForceComponent;
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Explosion")
+	UPROPERTY(ReplicatedUsing=OnRep_IsExploded, EditAnywhere, BlueprintReadOnly, Category = "Explosion")
 	bool bIsExploded;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Explosion")
@@ -44,6 +44,8 @@ public:
 	// Sets default values for this actor's properties
 	ACoopExplosiveActor();
 
+	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -56,6 +58,9 @@ protected:
 	UFUNCTION()
 	void OnHealthChanged(class UCoopHealthComponent* HealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
+private:
+	UFUNCTION()
+	void OnRep_IsExploded();
 //	/** Change the material color when it is exploded */
 //	UFUNCTION(BlueprintImplementableEvent)
 //	void OnExplosion();

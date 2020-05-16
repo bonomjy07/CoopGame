@@ -8,6 +8,7 @@
 #include "PhysicsEngine/RadialForceComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 ACoopExplosiveActor::ACoopExplosiveActor()
@@ -38,6 +39,16 @@ ACoopExplosiveActor::ACoopExplosiveActor()
 	// Set default damage varaibles
 	BaseDamage = 20.f;
 	DamageRadius = 250.f;
+
+	bReplicateMovement = true;
+	bReplicates = true;
+}
+
+void ACoopExplosiveActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ACoopExplosiveActor, bIsExploded);
 }
 
 // Called when the game starts or when spawned
@@ -48,7 +59,10 @@ void ACoopExplosiveActor::BeginPlay()
 	// Set default impulse
 	ExplosionImpulse = StaticMeshComponent->GetMass() * 1000.f;
 	
-	HealthComponent->OnHealthChanged.AddDynamic(this, &ACoopExplosiveActor::OnHealthChanged);
+	if (Role == ROLE_Authority)
+	{
+		HealthComponent->OnHealthChanged.AddDynamic(this, &ACoopExplosiveActor::OnHealthChanged);
+	}
 }
 
 // Called every frame
@@ -60,16 +74,18 @@ void ACoopExplosiveActor::Tick(float DeltaTime)
 
 void ACoopExplosiveActor::OnHealthChanged(UCoopHealthComponent* HealthComp, float Health, float HealthDelta, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
+	if (Role != ROLE_Authority)
+	{
+		UE_LOG(LogTemp, Log, TEXT("hi"));
+
+	}
+
 	if (Health <= 0.0f && !bIsExploded)
 	{
 		// I'm dead
 		bIsExploded = true;
 
-		// Change material explodedMaterial
-		StaticMeshComponent->SetMaterial(0, ExplodedMaterial);
-
-		// Show vfx
-		UGameplayStatics::SpawnEmitterAtLocation(this, ExplosionEffect, GetActorLocation());
+		OnRep_IsExploded(); // Fake call for function
 
 		// Blow up
 		FVector BlowUpImpulse = GetActorUpVector() * ExplosionImpulse;
@@ -82,8 +98,15 @@ void ACoopExplosiveActor::OnHealthChanged(UCoopHealthComponent* HealthComp, floa
 		// Blast away nearby physics actors
 		RadicalForceComponent->FireImpulse();
 
-		//OnExplosion();
-
 		DrawDebugSphere(GetWorld(), GetActorLocation(), DamageRadius, 8, FColor::Yellow, false, 5, 0, 3);
 	}
+}
+
+void ACoopExplosiveActor::OnRep_IsExploded()
+{
+	// Change material explodedMaterial
+	StaticMeshComponent->SetMaterial(0, ExplodedMaterial);
+
+	// Show vfx
+	UGameplayStatics::SpawnEmitterAtLocation(this, ExplosionEffect, GetActorLocation());
 }
