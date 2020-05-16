@@ -57,6 +57,7 @@ void ACoopCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ACoopCharacter, CurrentWeapon);
+	DOREPLIFETIME(ACoopCharacter, bDied);
 }
 
 // Called when the game starts or when spawned

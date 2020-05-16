@@ -53,7 +53,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Gunplay")
 	float ZoomSpeed;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CharacterState")
+	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadOnly, Category = "CharacterState")
 	bool bDied;
 
 public:
