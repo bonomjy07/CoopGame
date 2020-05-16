@@ -6,6 +6,19 @@
 #include "GameFramework/Actor.h"
 #include "CoopWeapon.generated.h"
 
+/** Contains information of single hitscan weapon*/
+USTRUCT()
+struct FHitScanTrace
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TEnumAsByte<EPhysicalSurface> SurfaceType;
+
+	UPROPERTY()
+	FVector_NetQuantize TraceTo;
+};
+
 UCLASS()
 class COOPGAME_API ACoopWeapon : public AActor
 {
@@ -14,6 +27,8 @@ class COOPGAME_API ACoopWeapon : public AActor
 public:	
 	// Sets default values for this actor's properties
 	ACoopWeapon();
+
+	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 protected:
 	// Called when the game starts or when spawned
@@ -27,6 +42,11 @@ public:
 	// Handle when it fire a weapon
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	virtual void Fire();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerFire();
+	void ServerFire_Implementation();
+	bool ServerFire_Validate();
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	virtual void StartFire();
@@ -76,17 +96,28 @@ protected:
 	class UParticleSystem* FleshImpactEffect;
 
 protected:
+	/** Used to timer the weapon firing */
 	FTimerHandle Timer_Firing;
 
 	// RPM : Bullets per minute for weapon firing
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	float RateOfFire;
 
+	/** Time between bullets */
 	float TimeBetweenShots;
+
+protected:
+	UPROPERTY(ReplicatedUsing=OnRep_HitScanTrace)
+	FHitScanTrace HitScanTrace;
+
+	UFUNCTION()
+	void OnRep_HitScanTrace();
 
 protected:
 	// Called when weapon is fired
 	void PlayFireEffect(const FVector& TraceEndPoint);
+
+	void PlayImpactEffect(EPhysicalSurface SurfaceType, const FVector& ImpactPoint);
 
 private:
 	// Helper var to store last fired time to fix shooting bug

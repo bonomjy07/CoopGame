@@ -9,6 +9,7 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "TimerManager.h"
+#include "Net/UnrealNetwork.h"
 #include "DrawDebugHelpers.h"
 
 #include "CoopGame.h"
@@ -40,7 +41,18 @@ ACoopWeapon::ACoopWeapon()
 	// Bullets per min
 	RateOfFire = 600.0f;
 
+	// Replication setting
 	bReplicates = true;
+	NetUpdateFrequency = 66.0f;
+	MinNetUpdateFrequency = 33.0f;
+}
+
+void ACoopWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	//DOREPLIFETIME_CONDITION(ACoopWeapon, HitScanTrace, COND_SkipOwner); // vfx is already played in server side
+	DOREPLIFETIME(ACoopWeapon, HitScanTrace);
 }
 
 // Called when the game starts or when spawned
@@ -61,32 +73,41 @@ void ACoopWeapon::Tick(float DeltaTime)
 
 void ACoopWeapon::Fire()
 {
-	UWorld* World = GetWorld();
-	check(World);
+	if (Role < ROLE_Authority)
+	{
+		ServerFire();
+		return;
+	}
 
 	// Trache the world from pawn eye to crosshair location
 	AActor* MyOwner = GetOwner();
 	if (MyOwner)
 	{
+		UWorld* World = GetWorld();
+		check(World);
+
 		// Get Eye transformation except scale
 		FVector EyeLocation;
 		FRotator EyeRotation;
 		MyOwner->GetActorEyesViewPoint(EyeLocation, EyeRotation);
 
-		// Ready to shoot
-		FHitResult HitResult;
-		FVector EndTrace = EyeLocation + EyeRotation.Vector()* 1000.0f;
+		// Where trace ends
+		FVector EndTrace = EyeLocation + EyeRotation.Vector() * 1000.0f;
 		FVector TraceEndPoint = EndTrace;
+
+		// Collision setting
 		FCollisionQueryParams QueryParams;
 		QueryParams.AddIgnoredActor(MyOwner);
 		QueryParams.AddIgnoredActor(this);
 		QueryParams.bTraceComplex = true;           // more precisely
 		QueryParams.bReturnPhysicalMaterial = true; // give me surface type
-		
+
 		// Something was hit
+		FHitResult HitResult;
+		EPhysicalSurface SurfaceType = EPhysicalSurface::SurfaceType_Default;
 		if (World->LineTraceSingleByChannel(HitResult, EyeLocation, EndTrace, COLLISION_WEAPON, QueryParams))
 		{
-			EPhysicalSurface SurfaceType = UPhysicalMaterial::DetermineSurfaceType(HitResult.PhysMaterial.Get());
+			SurfaceType = UPhysicalMaterial::DetermineSurfaceType(HitResult.PhysMaterial.Get());
 
 			// Apply the damage
 			float ActualDamage = BaseDamage;
@@ -96,41 +117,58 @@ void ACoopWeapon::Fire()
 			}
 			UGameplayStatics::ApplyPointDamage(HitResult.GetActor(), ActualDamage, EyeRotation.Vector(), HitResult, MyOwner->GetInstigatorController(), this, DamageType);
 
-			// Show impact effect depends on surface
-			UParticleSystem* SelectedEffect = nullptr;
-			switch (SurfaceType)
-			{
-				case SURFACE_FLESHDEFAULT:
-				case SURFACE_FLESHVULNERABLE:
-					SelectedEffect = FleshImpactEffect;
-					break;
-				default:
-					SelectedEffect = DefaultImpackEffect;
-					break;
-			}
-			UGameplayStatics::SpawnEmitterAtLocation(World, SelectedEffect, HitResult.Location, HitResult.ImpactNormal.Rotation());
+//			// Show impact effect depends on surface
+//			UParticleSystem* SelectedEffect = nullptr;
+//			switch (SurfaceType)
+//			{
+//			case SURFACE_FLESHDEFAULT:
+//			case SURFACE_FLESHVULNERABLE:
+//				SelectedEffect = FleshImpactEffect;
+//				break;
+//			default:
+//				SelectedEffect = DefaultImpackEffect;
+//				break;
+//			}
+//			UGameplayStatics::SpawnEmitterAtLocation(World, SelectedEffect, HitResult.Location, HitResult.ImpactNormal.Rotation());
+
+			PlayImpactEffect(SurfaceType, HitResult.ImpactPoint);
 
 			// Set where line trace ended
 			TraceEndPoint = HitResult.ImpactPoint;
 
-			if (HitResult.GetComponent()->IsSimulatingPhysics())
-			{
-				FVector Velocity = HitResult.ImpactNormal * -1.f * 2000.f;
-				HitResult.GetComponent()->AddImpulse(Velocity);
-			}
+//			if (HitResult.GetComponent()->IsSimulatingPhysics())
+//			{
+//				FVector Velocity = HitResult.ImpactNormal * -1.f * 2000.f;
+//				HitResult.GetComponent()->AddImpulse(Velocity);
+//			}
 		}
-
-		// Show some effects for gunshot
-		PlayFireEffect(TraceEndPoint);
 
 		// Store last fired time to fix shooting bug 
 		LastFiredTime = World->GetTimeSeconds();
+
+		// Show some effects for gunshot
+		PlayFireEffect(TraceEndPoint);
+		if (Role == ROLE_Authority)
+		{
+			HitScanTrace.TraceTo = TraceEndPoint;
+			HitScanTrace.SurfaceType = SurfaceType;
+		}
 
 		if (DebugWeaponDrawing)
 		{
 			DrawDebugLine(World, EyeLocation, EndTrace, FColor::Red, false, 1.0f, 0, 1.0f);
 		}
 	}
+}
+
+void ACoopWeapon::ServerFire_Implementation()
+{
+	Fire();
+}
+
+bool ACoopWeapon::ServerFire_Validate()
+{
+	return true;
 }
 
 void ACoopWeapon::StartFire()
@@ -142,6 +180,13 @@ void ACoopWeapon::StartFire()
 void ACoopWeapon::StopFire()
 {
 	GetWorldTimerManager().ClearTimer(Timer_Firing);
+}
+
+void ACoopWeapon::OnRep_HitScanTrace()
+{
+	PlayFireEffect(HitScanTrace.TraceTo);
+
+	PlayImpactEffect(HitScanTrace.SurfaceType, HitScanTrace.TraceTo);
 }
 
 void ACoopWeapon::PlayFireEffect(const FVector& TraceEndPoint)
@@ -167,4 +212,26 @@ void ACoopWeapon::PlayFireEffect(const FVector& TraceEndPoint)
 			PC->ClientPlayCameraShake(ShakeClass);
 		}
 	}
+}
+
+void ACoopWeapon::PlayImpactEffect(EPhysicalSurface SurfaceType, const FVector& ImpactPoint)
+{
+	// Set impact effect depends on surface type
+	UParticleSystem* SelectedEffect = nullptr;
+	switch (SurfaceType)
+	{
+	case SURFACE_FLESHDEFAULT:
+	case SURFACE_FLESHVULNERABLE:
+		SelectedEffect = FleshImpactEffect;
+		break;
+	default:
+		SelectedEffect = DefaultImpackEffect;
+		break;
+	}
+
+	// Set direction to spawn particle
+	FVector MuzzleLocation = WeaponMeshComponent->GetSocketLocation(MuzzleSocketName);
+	FVector ShotDirection = ImpactPoint - MuzzleLocation;
+	ShotDirection.Normalize();
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), SelectedEffect, ImpactPoint, ShotDirection.Rotation());
 }
