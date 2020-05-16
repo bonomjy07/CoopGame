@@ -40,7 +40,7 @@ public:
 
 	// Camera Shake when it fires
 	UPROPERTY(EditDefaultsOnly, Category = "Effects")
-	TSubclassOf<UCameraShake> ShakeClass;
+	TSubclassOf<class UCameraShake> ShakeClass;
 
 protected:
 	// Gun skeleton mesh
