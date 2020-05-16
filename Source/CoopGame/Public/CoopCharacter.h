@@ -19,9 +19,13 @@ class COOPGAME_API ACoopCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCameraComponent;
 
+	// Health component responsible for taking damage
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class UCoopHealthComponent* HealthComponent;
+
 protected:
 	// Character is currenlty holding weapon
-	UPROPERTY(BlueprintReadWrite, Category = "Weapon")
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Weapon")
 	class ACoopWeapon* CurrentWeapon;
 
 	// Default weapon class character is holding at begin
@@ -49,9 +53,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Gunplay")
 	float ZoomSpeed;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CharacterState")
+	bool bDied;
+
 public:
 	// Sets default values for this character's properties
 	ACoopCharacter();
+
+	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 protected:
 	// Called when the game starts or when spawned
@@ -94,4 +103,8 @@ protected:
 
 	// Called when zoom button is released
 	void EndZoom();
+
+protected:
+	UFUNCTION()
+	void OnHealthChanged(class UCoopHealthComponent* HealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 };
