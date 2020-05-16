@@ -158,14 +158,6 @@ void ACoopCharacter::MoveRight(float Value)
 	AddMovementInput(GetActorRightVector() * Value);
 }
 
-void ACoopCharacter::Fire()
-{
-	if (CurrentWeapon)
-	{
-		CurrentWeapon->Fire();
-	}
-}
-
 void ACoopCharacter::StartFire()
 {
 	if (CurrentWeapon)

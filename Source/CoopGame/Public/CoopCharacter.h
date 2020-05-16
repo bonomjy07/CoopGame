@@ -84,9 +84,6 @@ protected:
 	void MoveRight(float Value);
 
 	// Called when fire button is pressed
-	void Fire();
-
-	// Called when fire button is pressed
 	void StartFire();
 
 	// Called when fire button is pressed
