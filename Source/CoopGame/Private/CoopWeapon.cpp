@@ -92,7 +92,7 @@ void ACoopWeapon::Fire()
 		MyOwner->GetActorEyesViewPoint(EyeLocation, EyeRotation);
 
 		// Where trace ends
-		FVector EndTrace = EyeLocation + EyeRotation.Vector() * 1000.0f;
+		FVector EndTrace = EyeLocation + EyeRotation.Vector() * 2000.0f;
 		FVector TraceEndPoint = EndTrace;
 
 		// Collision setting
@@ -117,30 +117,10 @@ void ACoopWeapon::Fire()
 			}
 			UGameplayStatics::ApplyPointDamage(HitResult.GetActor(), ActualDamage, EyeRotation.Vector(), HitResult, MyOwner->GetInstigatorController(), this, DamageType);
 
-//			// Show impact effect depends on surface
-//			UParticleSystem* SelectedEffect = nullptr;
-//			switch (SurfaceType)
-//			{
-//			case SURFACE_FLESHDEFAULT:
-//			case SURFACE_FLESHVULNERABLE:
-//				SelectedEffect = FleshImpactEffect;
-//				break;
-//			default:
-//				SelectedEffect = DefaultImpackEffect;
-//				break;
-//			}
-//			UGameplayStatics::SpawnEmitterAtLocation(World, SelectedEffect, HitResult.Location, HitResult.ImpactNormal.Rotation());
-
 			PlayImpactEffect(SurfaceType, HitResult.ImpactPoint);
 
 			// Set where line trace ended
 			TraceEndPoint = HitResult.ImpactPoint;
-
-//			if (HitResult.GetComponent()->IsSimulatingPhysics())
-//			{
-//				FVector Velocity = HitResult.ImpactNormal * -1.f * 2000.f;
-//				HitResult.GetComponent()->AddImpulse(Velocity);
-//			}
 		}
 
 		// Store last fired time to fix shooting bug 
