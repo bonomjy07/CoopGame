@@ -74,12 +74,6 @@ void ACoopExplosiveActor::Tick(float DeltaTime)
 
 void ACoopExplosiveActor::OnHealthChanged(UCoopHealthComponent* HealthComp, float Health, float HealthDelta, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
-	if (Role != ROLE_Authority)
-	{
-		UE_LOG(LogTemp, Log, TEXT("hi"));
-
-	}
-
 	if (Health <= 0.0f && !bIsExploded)
 	{
 		// I'm dead
