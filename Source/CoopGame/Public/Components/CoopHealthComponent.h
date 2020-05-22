@@ -49,6 +49,12 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnHealthChangedSignature OnHealthChanged;
 
+	/** Delta health is added to current health if current health is bigger than 0.f */
+	UFUNCTION(BlueprintCallable, Category = "Health")
+	void Heal(float DeltaHealth);
+
+	void SetCurrentHealth(float NewCurrentHealth);
+
 private:
 	UFUNCTION()
 	void OnRep_CurrentHealth(float OldHealth);

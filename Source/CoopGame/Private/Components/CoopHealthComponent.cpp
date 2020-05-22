@@ -31,7 +31,7 @@ void UCoopHealthComponent::BeginPlay()
 	Super::BeginPlay();
 
 	// Only server can hook in cases of any error or bug
-	//if (GetOwnerRole() == ROLE_Authority)
+	if (GetOwnerRole() == ROLE_Authority)
 	{
 		// Register OnTakeAnyDamage handler
 		AActor* MyOwner = GetOwner();
@@ -58,11 +58,32 @@ void UCoopHealthComponent::HandleAnyDamage(AActor* DamagedActor, float Damage, c
 	}
 
 	// Update health clamped
-	CurrentHealth = FMath::Clamp<float>(CurrentHealth - Damage, 0.0f, DefaultHealth);
+	SetCurrentHealth(FMath::Clamp<float>(CurrentHealth - Damage, 0.0f, DefaultHealth));
 
 	OnHealthChanged.Broadcast(this, CurrentHealth, Damage, DamageType, InstigatedBy, DamageCauser);
 
-	UE_LOG(LogTemp, Log, TEXT("[%s] is damaged, Current Health is %s"), *DamagedActor->GetName() , *FString::SanitizeFloat(CurrentHealth));
+	UE_LOG(LogTemp, Log, TEXT("[%s] is damaged, Damage Amount is %s, Current Health is %s"), *DamagedActor->GetName() , *FString::SanitizeFloat(Damage), *FString::SanitizeFloat(CurrentHealth));
+}
+
+void UCoopHealthComponent::Heal(float DeltaHealth)
+{
+	if (CurrentHealth > 0.0f)
+	{
+		SetCurrentHealth(FMath::Clamp<float>(CurrentHealth + DeltaHealth, 0.f, DefaultHealth));
+	}
+
+	OnHealthChanged.Broadcast(this, CurrentHealth, DeltaHealth, nullptr, nullptr, nullptr);
+
+	UE_LOG(LogTemp, Log, TEXT("[%s] is healed, Heal Amount is %s, Current Health is %s"), *GetOwner()->GetName(), *FString::SanitizeFloat(DeltaHealth), *FString::SanitizeFloat(CurrentHealth));
+}
+
+void UCoopHealthComponent::SetCurrentHealth(float NewCurrentHealth)
+{
+	AActor* MyOwner = GetOwner();
+	if (MyOwner && MyOwner->Role == ROLE_Authority)
+	{
+		CurrentHealth = NewCurrentHealth;
+	}
 }
 
 void UCoopHealthComponent::OnRep_CurrentHealth(float old)
