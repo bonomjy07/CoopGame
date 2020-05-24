@@ -61,7 +61,10 @@ void ACoopExplosiveActor::BeginPlay()
 	
 	if (Role == ROLE_Authority)
 	{
-		HealthComponent->OnHealthChanged.AddDynamic(this, &ACoopExplosiveActor::OnHealthChanged);
+		if (!HealthComponent->OnHealthChanged.IsBound()) // @TODO: binding happens several times, reason is unknown....
+		{
+			HealthComponent->OnHealthChanged.AddDynamic(this, &ACoopExplosiveActor::OnHealthChanged);
+		}
 	}
 }
 
