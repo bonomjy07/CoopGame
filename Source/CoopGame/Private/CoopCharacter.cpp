@@ -206,6 +206,9 @@ void ACoopCharacter::OnHealthChanged(UCoopHealthComponent* HealthComp, float Hea
 
 		DetachFromControllerPendingDestroy();
 		SetLifeSpan(3.f);
+
+		CurrentWeapon->SetLifeSpan(3.f);
+		CurrentWeapon = nullptr;
 	}
 }
 
