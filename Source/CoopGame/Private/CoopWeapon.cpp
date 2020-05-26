@@ -115,7 +115,7 @@ void ACoopWeapon::Fire()
 			{
 				ActualDamage *= 3.0f;
 			}
-			UGameplayStatics::ApplyPointDamage(HitResult.GetActor(), ActualDamage, EyeRotation.Vector(), HitResult, MyOwner->GetInstigatorController(), this, DamageType);
+			UGameplayStatics::ApplyPointDamage(HitResult.GetActor(), ActualDamage, EyeRotation.Vector(), HitResult, MyOwner->GetInstigatorController(), MyOwner, DamageType);
 
 			PlayImpactEffect(SurfaceType, HitResult.ImpactPoint);
 
