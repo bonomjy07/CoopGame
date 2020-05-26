@@ -6,8 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "CoopHealthComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_SixParams(FOnHealthChangedSignature, class UCoopHealthComponent*, HealthComp,    float, Health, float, HealthDelta, const class UDamageType*, DamageType, class AController*, InstigatedBy, AActor*, DamageCauser);
-//DECLARE_DYNAMIC_MULTICAST_DELEGATE_SixParams(FOnHealthChangedSignature, USHealthComponent*, OwningHealthComp, float, Health, float, HealthDelta, const class UDamageType*, DamageType, class AController*, InstigatedBy, AActor*, DamageCauser);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_SixParams(FOnHealthChangedSignature, class UCoopHealthComponent*, HealthComp, float, Health, float, HealthDelta, const class UDamageType*, DamageType, class AController*, InstigatedBy, AActor*, DamageCauser);
 
 
 //UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -24,6 +23,10 @@ protected:
 	/** Responsible for health */
 	UPROPERTY(ReplicatedUsing=OnRep_CurrentHealth, BlueprintReadWrite, Category = "Health")
 	float CurrentHealth;
+
+	/** Responsible for dead or alive */
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Health")
+	bool bIsDead;
 
 public:	
 	// Sets default values for this component's properties

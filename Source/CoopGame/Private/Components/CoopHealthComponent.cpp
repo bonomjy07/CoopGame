@@ -3,7 +3,10 @@
 
 #include "Components/CoopHealthComponent.h"
 #include "GameFramework/Actor.h"
+#include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
+
+#include "CoopGameGameModeBase.h"
 
 // Sets default values for this component's properties
 UCoopHealthComponent::UCoopHealthComponent()
@@ -15,6 +18,9 @@ UCoopHealthComponent::UCoopHealthComponent()
 	// Set default health
 	DefaultHealth = 100.f;
 
+	// Set default dead state
+	bIsDead = false;
+
 	bReplicates = true;
 }
 
@@ -23,6 +29,7 @@ void UCoopHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UCoopHealthComponent, CurrentHealth);
+	DOREPLIFETIME(UCoopHealthComponent, bIsDead);
 }
 
 // Called when the game starts
@@ -30,7 +37,7 @@ void UCoopHealthComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Only server can hook in cases of any error or bug
+	// Only server can hook TakeAnyDamage delegator in cases of any error or bug
 	if (GetOwnerRole() == ROLE_Authority)
 	{
 		// Register OnTakeAnyDamage handler
@@ -50,28 +57,46 @@ void UCoopHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
+// Make sure this function is called by server only
 void UCoopHealthComponent::HandleAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
-	if (Damage <= 0.0f)
+	if (Damage <= 0.0f || bIsDead)
 	{
 		return;
 	}
 
-	// Update health clamped
+	// Update current health 
 	SetCurrentHealth(FMath::Clamp<float>(CurrentHealth - Damage, 0.0f, DefaultHealth));
+	// Update dead state
+	bIsDead = (CurrentHealth <= 0.0f);
 
+	// Raise HealthChanged event on server side
 	OnHealthChanged.Broadcast(this, CurrentHealth, Damage, DamageType, InstigatedBy, DamageCauser);
+
+	// Raise ActorKilled event if actor is dead
+	if (bIsDead)
+	{
+		ACoopGameGameModeBase* GM = Cast<ACoopGameGameModeBase>(GetWorld()->GetAuthGameMode());
+		if (GM)
+		{
+			GM->OnActorKilled.Broadcast(GetOwner(), DamageCauser, InstigatedBy);
+		}
+	}
 
 	UE_LOG(LogTemp, Log, TEXT("[%s] is damaged, Damage Amount is %s, Current Health is %s"), *DamagedActor->GetName() , *FString::SanitizeFloat(Damage), *FString::SanitizeFloat(CurrentHealth));
 }
 
 void UCoopHealthComponent::Heal(float DeltaHealth)
 {
-	if (CurrentHealth > 0.0f)
+	if (bIsDead)
 	{
-		SetCurrentHealth(FMath::Clamp<float>(CurrentHealth + DeltaHealth, 0.f, DefaultHealth));
+		return;
 	}
 
+	// Update current health
+	SetCurrentHealth(FMath::Clamp<float>(CurrentHealth + DeltaHealth, 0.f, DefaultHealth));
+
+	// Raise HealthChanged event on server side
 	OnHealthChanged.Broadcast(this, CurrentHealth, DeltaHealth, nullptr, nullptr, nullptr);
 
 	UE_LOG(LogTemp, Log, TEXT("[%s] is healed, Heal Amount is %s, Current Health is %s"), *GetOwner()->GetName(), *FString::SanitizeFloat(DeltaHealth), *FString::SanitizeFloat(CurrentHealth));
@@ -89,6 +114,7 @@ void UCoopHealthComponent::SetCurrentHealth(float NewCurrentHealth)
 void UCoopHealthComponent::OnRep_CurrentHealth(float old)
 {
 	float Damage = old - CurrentHealth;
+	// Raise HealthChanged event on client side
 	OnHealthChanged.Broadcast(this, CurrentHealth, Damage, nullptr, nullptr, nullptr);
 }
 
