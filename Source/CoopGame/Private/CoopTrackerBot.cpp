@@ -109,18 +109,28 @@ void ACoopTrackerBot::NotifyActorBeginOverlap(AActor* OtherActor)
 
 FVector ACoopTrackerBot::GetNextPathPoint()
 {
-	// Hack to get player pawn
-	AActor* PlayerPawn = nullptr;
-	TArray<AActor*> Players;
-	UGameplayStatics::GetAllActorsOfClass(this, ACoopCharacter::StaticClass(), Players);
-	if (Players.Num() > 0)
+	UWorld* World = GetWorld();
+	check(World);
+
+	// Nearest player pawn is the target
+	APawn* Target = nullptr;
+	float NearestTargetDistance = FLT_MAX;
+	for (FConstPawnIterator It = World->GetPawnIterator(); It; ++It)
 	{
-		int32 rand = FMath::RandHelper(Players.Num());
-		PlayerPawn = Players[rand];
+		APawn* Pawn = It->Get();
+		if (Pawn && Pawn->IsControlled())
+		{
+			float DistanceBetweenTargetAndMe = (Pawn->GetActorLocation() - GetActorLocation()).Size();
+			if (DistanceBetweenTargetAndMe < NearestTargetDistance)
+			{
+				NearestTargetDistance = DistanceBetweenTargetAndMe;
+				Target = Pawn;
+			}
+		}
 	}
 
 	// Track the player
-	UNavigationPath* NavPath = UNavigationSystemV1::FindPathToActorSynchronously(this, GetActorLocation(), PlayerPawn);
+	UNavigationPath* NavPath = UNavigationSystemV1::FindPathToActorSynchronously(this, GetActorLocation(), Target);
 
 	// Return new path
 	if (NavPath && NavPath->PathPoints.Num() > 1)
