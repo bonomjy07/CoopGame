@@ -50,6 +50,8 @@ ACoopCharacter::ACoopCharacter()
 	bZoomingIn = false;
 	ZoomedFOV = 65.0f;
 	ZoomSpeed = 0.2f;
+
+	bDied = false; 
 }
 
 void ACoopCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -201,12 +203,19 @@ void ACoopCharacter::OnHealthChanged(UCoopHealthComponent* HealthComp, float Hea
 	{
 		bDied = true;
 
+		// Stop movement
 		GetMovementComponent()->StopMovementImmediately();
+
+		// Set NoCollision
 		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+		// Detach the controller so that player can't move or shoot
 		DetachFromControllerPendingDestroy();
+
+		// Destroy the character
 		SetLifeSpan(3.f);
 
+		// Destroy the holding weapon
 		CurrentWeapon->SetLifeSpan(3.f);
 		CurrentWeapon = nullptr;
 	}
