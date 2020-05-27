@@ -66,6 +66,7 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Powerups")
 	void WasActivated(AActor* Activator); 
 
+	// Called when a pawn consumed the powerup
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, Category = "Powerups")
 	void ClientActivatedByPawn(AActor* Activator);
 	virtual void ClientActivatedByPawn_Implementation(AActor* Activator);
