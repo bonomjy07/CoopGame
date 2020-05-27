@@ -91,7 +91,7 @@ void ACoopExplosiveActor::OnHealthChanged(UCoopHealthComponent* HealthComp, floa
 		// Apply damage
 		TArray<AActor*> IgnoreActors; // None
 		IgnoreActors.Push(this);
-		UGameplayStatics::ApplyRadialDamage(this, BaseDamage, GetActorLocation(), DamageRadius, UDamageType::StaticClass(), IgnoreActors, DamageCauser, InstigatedBy);
+		UGameplayStatics::ApplyRadialDamage(this, BaseDamage, GetActorLocation(), DamageRadius, UDamageType::StaticClass(), IgnoreActors, this, InstigatedBy);
 
 		// Blast away nearby physics actors
 		RadicalForceComponent->FireImpulse();

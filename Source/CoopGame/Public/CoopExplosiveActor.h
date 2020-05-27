@@ -21,7 +21,7 @@ class COOPGAME_API ACoopExplosiveActor : public AActor
 	class URadialForceComponent* RadicalForceComponent;
 
 protected:
-	UPROPERTY(ReplicatedUsing=OnRep_IsExploded, EditAnywhere, BlueprintReadOnly, Category = "Explosion")
+	UPROPERTY(ReplicatedUsing=OnRep_IsExploded, BlueprintReadOnly, Category = "Explosion")
 	bool bIsExploded;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Explosion")
