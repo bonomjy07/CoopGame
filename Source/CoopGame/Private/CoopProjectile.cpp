@@ -41,6 +41,7 @@ void ACoopProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// It starts to boom when it's spawned
 	SetLifeSpan(ExplosionDelay);
 }
 
@@ -55,7 +56,7 @@ void ACoopProjectile::Destroyed()
 {
 	Super::Destroyed();
 
-	// Apply damage
+	// Apply radical damage
 	TArray<AActor*> IgnoreActors;
 	UGameplayStatics::ApplyRadialDamage(this, ExplosionDamage, GetActorLocation(), ExplosionRadius, UDamageType::StaticClass(), IgnoreActors, this, GetInstigatorController());
 
