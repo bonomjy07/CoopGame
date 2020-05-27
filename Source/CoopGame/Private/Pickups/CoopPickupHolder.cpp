@@ -76,6 +76,7 @@ void ACoopPickupHolder::Respawn()
 	UWorld* World = GetWorld();
 	check(World);
 
+	// Respawn the powerup
 	FVector Location = GetActorLocation() + FVector(0, 0, 50.f);
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
