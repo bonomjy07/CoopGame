@@ -47,14 +47,6 @@ ACoopWeapon::ACoopWeapon()
 	MinNetUpdateFrequency = 33.0f;
 }
 
-void ACoopWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	//DOREPLIFETIME_CONDITION(ACoopWeapon, HitScanTrace, COND_SkipOwner); // vfx is already played in server side
-	DOREPLIFETIME(ACoopWeapon, HitScanTrace);
-}
-
 // Called when the game starts or when spawned
 void ACoopWeapon::BeginPlay()
 {
@@ -73,9 +65,14 @@ void ACoopWeapon::Tick(float DeltaTime)
 
 void ACoopWeapon::Fire()
 {
+	ServerFire();
+}
+
+void ACoopWeapon::ServerFire_Implementation()
+{
+	// Only server handles this function
 	if (Role < ROLE_Authority)
 	{
-		ServerFire();
 		return;
 	}
 
@@ -117,7 +114,8 @@ void ACoopWeapon::Fire()
 			}
 			UGameplayStatics::ApplyPointDamage(HitResult.GetActor(), ActualDamage, EyeRotation.Vector(), HitResult, MyOwner->GetInstigatorController(), MyOwner, DamageType);
 
-			PlayImpactEffect(SurfaceType, HitResult.ImpactPoint);
+			// Multicast that somthing was hit
+			ClientWasImpacted(SurfaceType, HitResult.ImpactPoint);
 
 			// Set where line trace ended
 			TraceEndPoint = HitResult.ImpactPoint;
@@ -126,13 +124,8 @@ void ACoopWeapon::Fire()
 		// Store last fired time to fix shooting bug 
 		LastFiredTime = World->GetTimeSeconds();
 
-		// Show some effects for gunshot
-		PlayFireEffect(TraceEndPoint);
-		if (Role == ROLE_Authority)
-		{
-			HitScanTrace.TraceTo = TraceEndPoint;
-			HitScanTrace.SurfaceType = SurfaceType;
-		}
+		// Multicast that it was fired
+		ClientWasFired(TraceEndPoint);
 
 		if (DebugWeaponDrawing)
 		{
@@ -141,14 +134,19 @@ void ACoopWeapon::Fire()
 	}
 }
 
-void ACoopWeapon::ServerFire_Implementation()
-{
-	Fire();
-}
-
 bool ACoopWeapon::ServerFire_Validate()
 {
 	return true;
+}
+
+void ACoopWeapon::ClientWasFired_Implementation(const FVector& TraceEndPoint)
+{
+	PlayFireEffect(TraceEndPoint);
+}
+
+void ACoopWeapon::ClientWasImpacted_Implementation(EPhysicalSurface SurfaceType, const FVector& ImpactPoint)
+{
+	PlayImpactEffect(SurfaceType, ImpactPoint);
 }
 
 void ACoopWeapon::StartFire()
@@ -160,13 +158,6 @@ void ACoopWeapon::StartFire()
 void ACoopWeapon::StopFire()
 {
 	GetWorldTimerManager().ClearTimer(Timer_Firing);
-}
-
-void ACoopWeapon::OnRep_HitScanTrace()
-{
-	PlayFireEffect(HitScanTrace.TraceTo);
-
-	PlayImpactEffect(HitScanTrace.SurfaceType, HitScanTrace.TraceTo);
 }
 
 void ACoopWeapon::PlayFireEffect(const FVector& TraceEndPoint)
